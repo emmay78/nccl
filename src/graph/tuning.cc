@@ -289,6 +289,9 @@ ncclResult_t ncclTopoTuneModel(struct ncclComm* comm, int minCompCap, int maxCom
   }
 
   if (comm->rank == 0) {
+    const char* ncclTuningFilePath = getenv("NCCL_TUNING_FILE");
+    FILE* ncclTuningFile = fopen(ncclTuningFilePath, "w");
+
     char line[1024];
     for (int block=0; block<2; block++) {
       sprintf(line, "  Algorithm   |");
@@ -297,6 +300,8 @@ ncclResult_t ncclTopoTuneModel(struct ncclComm* comm, int minCompCap, int maxCom
         sprintf(line+strlen(line), " %14s   %14s   %14s |", "", ncclAlgoStr[a], "");
       }
       INFO(NCCL_TUNING, "%s", line);
+      fprintf(ncclTuningFile, "%s\n", line);
+
       sprintf(line, "  Protocol    |");
       for (int ba=0; ba<NCCL_NUM_ALGORITHMS/2; ba++) {
         for (int p=0; p<NCCL_NUM_PROTOCOLS; p++) {
@@ -304,6 +309,8 @@ ncclResult_t ncclTopoTuneModel(struct ncclComm* comm, int minCompCap, int maxCom
         }
       }
       INFO(NCCL_TUNING, "%s", line);
+      fprintf(ncclTuningFile, "%s\n", line);
+
       sprintf(line, " Max NThreads |");
       for (int ba=0; ba<NCCL_NUM_ALGORITHMS/2; ba++) {
 	int a = block*NCCL_NUM_ALGORITHMS/2+ba;
@@ -312,6 +319,8 @@ ncclResult_t ncclTopoTuneModel(struct ncclComm* comm, int minCompCap, int maxCom
         }
       }
       INFO(NCCL_TUNING, "%s", line);
+      fprintf(ncclTuningFile, "%s\n", line);
+
       for (int c=0; c<NCCL_NUM_FUNCTIONS; c++) {
         sprintf(line, "%13s |", ncclFuncStr[c]);
         for (int ba=0; ba<NCCL_NUM_ALGORITHMS/2; ba++) {
@@ -321,8 +330,11 @@ ncclResult_t ncclTopoTuneModel(struct ncclComm* comm, int minCompCap, int maxCom
           }
         }
         INFO(NCCL_TUNING, "%s", line);
+        fprintf(ncclTuningFile, "%s\n", line);
       }
     }
+
+    fclose(ncclTuningFile);
   }
 
   // Set per-thread amount of work before we increase nThreads and nChannels
